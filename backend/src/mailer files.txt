@@ -1,0 +1,86 @@
+verify otp.js
+export default async function verifyOTP(verificationCode, email) {
+
+    if (sampleData[email] === verificationCode) {
+        console.log('Verification code matched');
+        return true;
+    } else {
+        console.error('Verification code did not match');
+        return false;
+    }
+
+}
+
+
+sendmail.js
+import nodeMailer from 'nodemailer';
+
+export default async function sendMail (email,verificationCode) {
+    
+    const transporter = nodeMailer.createTransport({
+        service: 'gmail',
+        // secure: false,
+        auth: {
+            user: 'anamay.narkar.102@gmail.com',
+            pass: ""
+        },
+    });
+
+    const mailOptions = {
+        from: 'anamay.narkar.102@gmail.com',
+        to: email,
+        subject: 'Email Verification Code',
+        html: `
+            <h1>Email Verification</h1>
+            <p>Your verification code is: <strong>${verificationCode}</strong></p>
+            <p>Please enter this code on our website to verify your email.</p>
+        `
+    };
+
+        try {
+          // ... (rest of the code remains the same)
+          await transporter.sendMail(mailOptions);
+          console.log('Verification code sent successfully');
+          return true;
+        } catch (error) {
+          console.error('Error sending verification code:', error);
+          return { status: 'error', message: 'Verification code not sent' };
+        }
+      }
+
+
+controllers
+
+// store emails and otps in objects
+const sampleData = {
+
+}
+
+app.post('/signup', async (req, res) => {
+    const { email, password } = req.body;
+    const verificationCode = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const result = await sendMail(email, verificationCode);
+    if (result === true) {
+      res.send('Verification code sent');
+      
+        sampleData[email] = verificationCode;
+
+    } else {
+      res.json(result);
+    }
+  });
+
+app.post('/verifyOTP',async (req,res)=>{
+
+    const { email, verificationCode } = req.query;
+
+    const result = await verifyOTP(email,verificationCode);
+
+    if(result){
+        res.send('OTP verified');
+        delete sampleData[email];
+    }else{
+        res.send('OTP not verified');
+    }
+
+})

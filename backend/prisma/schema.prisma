@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = "postgresql://postgres:BetaMLSA@localhost:5432/FarmerApp"
+}
+
+model Admin {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name         String    @db.VarChar
+  email        String    @unique @db.VarChar
+  phone        String    @db.VarChar
+  password     String    @db.VarChar
+  profileImage Bytes?
+  Satbara      Satbara[]
+}
+
+model Bid {
+  id               String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  customerId       String     @db.Uuid
+  farmerId         String     @db.Uuid
+  productId        String     @db.Uuid
+  bidStatus        BidStatus? @default(PENDING)
+  requiredQuantity Int
+  offerPrice       Int
+  Customer         Customer   @relation(fields: [customerId], references: [customerId], onDelete: Cascade, onUpdate: NoAction)
+  Farmer           Farmer     @relation(fields: [farmerId], references: [farmerId], onDelete: Cascade, onUpdate: NoAction)
+  Product          Product    @relation(fields: [productId], references: [productId], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model Customer {
+  customerId   String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name         String        @db.VarChar
+  phone        String        @db.VarChar
+  email        String        @unique @db.VarChar
+  address      String        @db.VarChar
+  password     String        @db.VarChar
+  profileImage Bytes?
+  Bid          Bid[]
+  Review       Review[]
+  Transaction  Transaction[]
+}
+
+model Farmer {
+  farmerId     String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name         String        @db.VarChar
+  phone        String        @db.VarChar
+  email        String        @unique @db.VarChar
+  address      String        @db.VarChar
+  password     String        @db.VarChar
+  profileImage Bytes?
+  Bid          Bid[]
+  Product      Product[]
+  Review       Review[]
+  Satbara      Satbara[]
+  Transaction  Transaction[]
+}
+
+model Product {
+  productId         String        @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  customProductName String        @db.VarChar
+  price             Float
+  description       String?
+  currentQuantity   Int
+  productName       String
+  productImage      Bytes?
+  farmerId          String        @db.Uuid
+  category          Category
+  ratingCount       Int           @default(0)
+  Bid               Bid[]
+  Farmer            Farmer        @relation(fields: [farmerId], references: [farmerId], onDelete: Cascade, onUpdate: NoAction)
+  Review            Review[]
+  Transaction       Transaction[]
+}
+
+model Review {
+  id          Int      @id @default(autoincrement())
+  rating      Float
+  ratingCount Int      @default(0)
+  comment     String
+  productId   String   @db.Uuid
+  customerId  String   @db.Uuid
+  farmerId    String   @db.Uuid
+  Customer    Customer @relation(fields: [customerId], references: [customerId], onDelete: Cascade, onUpdate: NoAction)
+  Farmer      Farmer   @relation(fields: [farmerId], references: [farmerId], onDelete: Cascade, onUpdate: NoAction)
+  Product     Product  @relation(fields: [productId], references: [productId], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model Satbara {
+  id                 String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  satbaraImage       Bytes
+  verified           Boolean
+  verifiedAt         DateTime?           @db.Timestamp(6)
+  verificationStatus VerificationStatus? @default(NOTAPPLIED)
+  expiryDate         DateTime            @db.Timestamp(6)
+  farmerId           String              @db.Uuid
+  adminId            String?             @db.Uuid
+  Admin              Admin?              @relation(fields: [adminId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  Farmer             Farmer              @relation(fields: [farmerId], references: [farmerId], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model Transaction {
+  transactionId String         @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  quantity      Int
+  totalAmount   Float
+  paymentStatus PaymentStatus? @default(INESECROW)
+  createdAt     DateTime?      @default(now()) @db.Timestamp(6)
+  customerId    String         @db.Uuid
+  productId     String         @db.Uuid
+  farmerId      String         @db.Uuid
+  Customer      Customer       @relation(fields: [customerId], references: [customerId], onDelete: Cascade, onUpdate: NoAction)
+  Farmer        Farmer         @relation(fields: [farmerId], references: [farmerId], onDelete: Cascade, onUpdate: NoAction)
+  Product       Product        @relation(fields: [productId], references: [productId], onDelete: Cascade, onUpdate: NoAction)
+}
+
+enum BidStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum Category {
+  VEGETABLES
+  FRUITS
+  GRAINS
+  DAIRY
+  MEAT
+  OTHER
+}
+
+enum PaymentStatus {
+  INESECROW
+  FARMERPAYMENTSUCCESS
+  REFUNDAPPLIED
+  REFUNDSUCCESS
+}
+
+enum VerificationStatus {
+  NOTAPPLIED
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
